@@ -51,7 +51,7 @@ export default defineConfig({
     ],
     footer: {
       message: 'Released under the MIT License.',
-      copyright: 'Copyright 2026 Masters Union',
+      copyright: "Copyright @ 2026 Masters' Union",
     },
     search: {
       provider: 'local',
