@@ -1,4 +1,4 @@
-export { OutboundClient } from './client';
+export { Outbound } from './client';
 
 // Error classes
 export {

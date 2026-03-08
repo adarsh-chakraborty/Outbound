@@ -1,7 +1,7 @@
 {
-  "name": "outbound-sdk",
+  "name": "@masters-union/outbound-sdk",
   "version": "0.1.0",
-  "description": "Official Node.js SDK for the Outbound email platform",
+  "description": "Official Node.js SDK for the Outbound Email SaaS platform",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -21,6 +21,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -40,6 +43,7 @@
     "@types/node": "^25.3.5",
     "tsup": "^8.0.0",
     "typescript": "^5.4.0",
+    "vitepress": "^1.6.4",
     "vitest": "^1.0.0"
   }
 }

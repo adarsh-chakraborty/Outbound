@@ -7,7 +7,9 @@ import { WebhooksResource } from './resources/webhooks';
 import { DashboardResource } from './resources/dashboard';
 import type { OutboundConfig, ResolvedConfig } from './types';
 
-export class OutboundClient {
+const BASE_URL = 'https://outbound-api.mastersunion.org';
+
+export class Outbound {
   readonly email: EmailResource;
   readonly templates: TemplatesResource;
   readonly suppressions: SuppressionsResource;
@@ -17,7 +19,7 @@ export class OutboundClient {
   constructor(config?: OutboundConfig) {
     const resolved: ResolvedConfig = {
       apiKey: config?.apiKey || this.getEnv('OUTBOUND_API_KEY') || '',
-      baseUrl: config?.baseUrl || this.getEnv('OUTBOUND_API_URL') || 'http://localhost:3000',
+      baseUrl: config?.baseUrl || BASE_URL,
       timeout: config?.timeout ?? 30_000,
       maxRetries: config?.maxRetries ?? 3,
       retryDelay: config?.retryDelay ?? 1000,
