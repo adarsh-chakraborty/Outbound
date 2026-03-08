@@ -3,6 +3,7 @@ import { defineConfig } from 'vitepress';
 export default defineConfig({
   title: 'Outbound SDK',
   description: 'Official Node.js SDK for the Outbound email platform',
+  base: '/Outbound/',
   themeConfig: {
     logo: '/logo.svg',
     nav: [
