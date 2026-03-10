@@ -1,6 +1,6 @@
 {
   "name": "@masters-union/outbound-sdk",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Official Node.js SDK for the Outbound Email SaaS platform",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
