@@ -2,19 +2,20 @@
 
 ## Default Behavior
 
-By default, the SDK reads your API key from the `OUTBOUND_API_KEY` environment variable:
+The SDK client is stateless — no API key is stored. Create a client with optional config:
 
 ```ts
 const outbound = new Outbound(); // That's it!
 ```
 
+Every method takes the API key as its first argument, allowing multi-tenant usage with a single client.
+
 ## Constructor Options
 
-You can override defaults by passing a config object:
+You can customize HTTP behavior by passing a config object:
 
 ```ts
 const outbound = new Outbound({
-  apiKey: 'mu_outbound_...',  // Override env var
   baseUrl: 'http://localhost:3000', // For local development
   timeout: 30_000,    // Request timeout in ms (default: 30s)
   maxRetries: 3,      // Retry attempts on 429/5xx (default: 3)
@@ -26,7 +27,6 @@ const outbound = new Outbound({
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `apiKey` | `string` | `process.env.OUTBOUND_API_KEY` | Your tenant API key |
 | `baseUrl` | `string` | Production URL | API base URL (override for local dev) |
 | `timeout` | `number` | `30000` | Request timeout in milliseconds |
 | `maxRetries` | `number` | `3` | Max retry attempts on 429 and 5xx errors |
@@ -34,12 +34,24 @@ const outbound = new Outbound({
 
 ## API Key
 
-Your API key is required. If not provided via constructor or environment variable, the SDK throws an `AuthenticationError` immediately:
+The API key is passed as the first argument to every method call:
 
 ```ts
-const outbound = new Outbound(); // No key anywhere
-// ❌ AuthenticationError: API key is required.
-//    Pass it to the constructor or set the OUTBOUND_API_KEY environment variable.
+const apiKey = 'mu_outbound_...';
+
+await outbound.email.send(apiKey, { /* ... */ });
+await outbound.templates.list(apiKey);
+await outbound.dashboard.quota(apiKey);
+```
+
+This design supports multi-tenant applications where different requests use different API keys:
+
+```ts
+const tenantAKey = 'mu_outbound_tenant_a_...';
+const tenantBKey = 'mu_outbound_tenant_b_...';
+
+await outbound.email.send(tenantAKey, { /* ... */ });
+await outbound.email.send(tenantBKey, { /* ... */ });
 ```
 
 ### Getting your API key

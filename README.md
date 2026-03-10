@@ -11,18 +11,21 @@ npm install outbound-sdk
 ## Quick Start
 
 ```ts
-import { OutboundClient } from 'outbound-sdk';
+import { Outbound } from 'outbound-sdk';
 
-const outbound = new OutboundClient({
-  apiKey: 'mu_outbound_...',       // or set OUTBOUND_API_KEY env var
-  baseUrl: 'https://api.your-domain.com', // or set OUTBOUND_API_URL env var
+const outbound = new Outbound({
+  baseUrl: 'https://api.your-domain.com', // optional, defaults to production
 });
+
+const apiKey = 'mu_outbound_...'; // your tenant API key
 ```
+
+Every method requires an `apiKey` as the first argument, allowing you to use multiple tenants with a single client instance.
 
 ### Send an Email
 
 ```ts
-const { jobId, messageId } = await outbound.email.send({
+const { jobId, messageId } = await outbound.email.send(apiKey, {
   toEmail: 'user@example.com',
   fromEmail: 'noreply@company.com',
   emailSubject: 'Welcome!',
@@ -33,7 +36,7 @@ const { jobId, messageId } = await outbound.email.send({
 ### Send Bulk Emails
 
 ```ts
-const result = await outbound.email.bulk({
+const result = await outbound.email.bulk(apiKey, {
   fromEmail: 'noreply@company.com',
   emailSubject: 'Newsletter',
   emails: [
@@ -47,7 +50,7 @@ const result = await outbound.email.bulk({
 ### Check Job Status
 
 ```ts
-const status = await outbound.email.status('job-uuid');
+const status = await outbound.email.status(apiKey, 'job-uuid');
 // status.job, status.recipients
 ```
 
@@ -55,7 +58,7 @@ const status = await outbound.email.status('job-uuid');
 
 ```ts
 // Create
-const { template } = await outbound.templates.create({
+const { template } = await outbound.templates.create(apiKey, {
   name: 'welcome',
   subject: 'Welcome {{firstName}}!',
   htmlBody: '<h1>Hello {{firstName}}</h1>',
@@ -63,10 +66,10 @@ const { template } = await outbound.templates.create({
 });
 
 // List
-const { templates, total } = await outbound.templates.list({ status: 'active' });
+const { templates, total } = await outbound.templates.list(apiKey, { status: 'active' });
 
 // Send using template
-const { jobId } = await outbound.templates.send({
+const { jobId } = await outbound.templates.send(apiKey, {
   templateId: template.id,
   toEmail: 'user@example.com',
   fromEmail: 'noreply@company.com',
@@ -74,7 +77,7 @@ const { jobId } = await outbound.templates.send({
 });
 
 // Bulk send using template
-const bulk = await outbound.templates.bulkSend({
+const bulk = await outbound.templates.bulkSend(apiKey, {
   templateId: template.id,
   fromEmail: 'noreply@company.com',
   recipients: [
@@ -84,7 +87,7 @@ const bulk = await outbound.templates.bulkSend({
 });
 
 // Preview
-const preview = await outbound.templates.preview(template.id, {
+const preview = await outbound.templates.preview(apiKey, template.id, {
   variables: { firstName: 'John' },
 });
 ```
@@ -93,58 +96,70 @@ const preview = await outbound.templates.preview(template.id, {
 
 ```ts
 // Add
-await outbound.suppressions.add({ email: 'bad@example.com', reason: 'manual' });
+await outbound.suppressions.add(apiKey, { email: 'bad@example.com', reason: 'manual' });
 
 // List
-const { suppressions } = await outbound.suppressions.list({ reason: 'bounce' });
+const { suppressions } = await outbound.suppressions.list(apiKey, { reason: 'bounce' });
 
 // Remove
-await outbound.suppressions.remove('bad@example.com');
+await outbound.suppressions.remove(apiKey, 'bad@example.com');
 ```
 
 ### Webhooks
 
 ```ts
 // Create
-const { webhook, secret } = await outbound.webhooks.create({
+const { webhook, secret } = await outbound.webhooks.create(apiKey, {
   url: 'https://myapp.com/webhooks/outbound',
   events: ['delivery', 'bounce', 'complaint'],
 });
 // Store `secret` securely for signature verification
 
 // Verify incoming webhook
-const isValid = OutboundClient.verifyWebhookSignature(rawBody, signatureHeader, secret);
+const isValid = Outbound.verifyWebhookSignature(rawBody, signatureHeader, secret);
 ```
 
 ### Dashboard
 
 ```ts
-const dashboard = await outbound.dashboard.get();
+const dashboard = await outbound.dashboard.get(apiKey);
 // dashboard.last30Days.sent, dashboard.quota, etc.
 
-const quota = await outbound.dashboard.quota();
+const quota = await outbound.dashboard.quota(apiKey);
 // quota.dailyUsed, quota.monthlyUsed, quota.remaining
+```
+
+### Multi-Tenant Usage
+
+```ts
+const outbound = new Outbound();
+
+const tenantAKey = 'mu_outbound_tenant_a_...';
+const tenantBKey = 'mu_outbound_tenant_b_...';
+
+// Use different API keys for different tenants
+await outbound.email.send(tenantAKey, { ... });
+await outbound.email.send(tenantBKey, { ... });
 ```
 
 ## Configuration
 
-| Option | Env Variable | Default | Description |
-|--------|-------------|---------|-------------|
-| `apiKey` | `OUTBOUND_API_KEY` | - | Your tenant API key (required) |
-| `baseUrl` | `OUTBOUND_API_URL` | `http://localhost:3000` | API base URL |
-| `timeout` | - | `30000` | Request timeout in ms |
-| `maxRetries` | - | `3` | Max retries on 429/5xx |
-| `retryDelay` | - | `1000` | Initial retry delay in ms (exponential backoff) |
+| Option | Default | Description |
+|--------|---------|-------------|
+| `baseUrl` | `https://outbound-api.mastersunion.org` | API base URL |
+| `timeout` | `30000` | Request timeout in ms |
+| `maxRetries` | `3` | Max retries on 429/5xx |
+| `retryDelay` | `1000` | Initial retry delay in ms (exponential backoff) |
 
 ## Error Handling
 
 All errors extend `OutboundError` with `statusCode`, `message`, and `details`:
 
 ```ts
-import { OutboundClient, RateLimitError, NotFoundError } from 'outbound-sdk';
+import { Outbound, RateLimitError, NotFoundError } from 'outbound-sdk';
 
 try {
-  await outbound.email.send({ ... });
+  await outbound.email.send(apiKey, { ... });
 } catch (err) {
   if (err instanceof RateLimitError) {
     console.log(`Rate limited. Retry after ${err.retryAfter}s`);

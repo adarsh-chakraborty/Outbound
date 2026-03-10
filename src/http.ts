@@ -20,23 +20,23 @@ export interface RequestOptions {
 export class HttpClient {
   constructor(private config: ResolvedConfig) {}
 
-  async get<T>(path: string, params?: Record<string, unknown>): Promise<T> {
-    return this.request<T>('GET', path, { params });
+  async get<T>(apiKey: string, path: string, params?: Record<string, unknown>): Promise<T> {
+    return this.request<T>(apiKey, 'GET', path, { params });
   }
 
-  async post<T>(path: string, body?: unknown): Promise<T> {
-    return this.request<T>('POST', path, { body });
+  async post<T>(apiKey: string, path: string, body?: unknown): Promise<T> {
+    return this.request<T>(apiKey, 'POST', path, { body });
   }
 
-  async patch<T>(path: string, body?: unknown): Promise<T> {
-    return this.request<T>('PATCH', path, { body });
+  async patch<T>(apiKey: string, path: string, body?: unknown): Promise<T> {
+    return this.request<T>(apiKey, 'PATCH', path, { body });
   }
 
-  async delete<T>(path: string): Promise<T> {
-    return this.request<T>('DELETE', path);
+  async delete<T>(apiKey: string, path: string): Promise<T> {
+    return this.request<T>(apiKey, 'DELETE', path);
   }
 
-  private async request<T>(method: string, path: string, options?: RequestOptions): Promise<T> {
+  private async request<T>(apiKey: string, method: string, path: string, options?: RequestOptions): Promise<T> {
     let lastError: Error | undefined;
 
     for (let attempt = 0; attempt <= this.config.maxRetries; attempt++) {
@@ -48,7 +48,7 @@ export class HttpClient {
         const response = await fetch(url, {
           method,
           headers: {
-            'X-Api-Key': this.config.apiKey,
+            'X-Api-Key': apiKey,
             'Content-Type': 'application/json',
           },
           body: options?.body ? JSON.stringify(options.body) : undefined,

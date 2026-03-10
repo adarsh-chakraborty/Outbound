@@ -1,5 +1,4 @@
 import { HttpClient } from './http';
-import { AuthenticationError } from './errors';
 import { EmailResource } from './resources/email';
 import { TemplatesResource } from './resources/templates';
 import { SuppressionsResource } from './resources/suppressions';
@@ -18,18 +17,11 @@ export class Outbound {
 
   constructor(config?: OutboundConfig) {
     const resolved: ResolvedConfig = {
-      apiKey: config?.apiKey || this.getEnv('OUTBOUND_API_KEY') || '',
       baseUrl: config?.baseUrl || BASE_URL,
       timeout: config?.timeout ?? 30_000,
       maxRetries: config?.maxRetries ?? 3,
       retryDelay: config?.retryDelay ?? 1000,
     };
-
-    if (!resolved.apiKey) {
-      throw new AuthenticationError(
-        'API key is required. Pass it to the constructor or set the OUTBOUND_API_KEY environment variable.',
-      );
-    }
 
     const http = new HttpClient(resolved);
 
@@ -58,12 +50,5 @@ export class Outbound {
     } catch {
       return false;
     }
-  }
-
-  private getEnv(key: string): string | undefined {
-    if (typeof process !== 'undefined' && process.env) {
-      return process.env[key];
-    }
-    return undefined;
   }
 }

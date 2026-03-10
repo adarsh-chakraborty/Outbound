@@ -9,7 +9,7 @@ Access your tenant analytics, email metrics, and quota usage programmatically. U
 Get a complete overview of your tenant's email activity and resource usage.
 
 ```ts
-const dashboard = await outbound.dashboard.get();
+const dashboard = await outbound.dashboard.get(apiKey);
 
 console.log(`Quota: ${dashboard.quota.used}/${dashboard.quota.allocated}`);
 console.log(`Delivered (30d): ${dashboard.last30Days.delivered}`);
@@ -88,7 +88,7 @@ console.log(`Templates: ${dashboard.templates.active} active`);
 Get detailed quota usage — useful for checking available capacity before a large send.
 
 ```ts
-const quota = await outbound.dashboard.quota();
+const quota = await outbound.dashboard.quota(apiKey);
 
 console.log(`Daily: ${quota.dailyUsed}/${quota.dailyLimit}`);
 console.log(`Monthly: ${quota.monthlyUsed}/${quota.monthlyLimit}`);
@@ -140,7 +140,7 @@ console.log(`Overall: ${quota.percentageUsed}% used`);
 Before sending a large batch, verify you have enough quota:
 
 ```ts
-const quota = await outbound.dashboard.quota();
+const quota = await outbound.dashboard.quota(apiKey);
 const recipientCount = 500;
 
 if (quota.remaining < recipientCount) {
@@ -154,7 +154,7 @@ if (quota.remaining < recipientCount) {
   );
 } else {
   // Safe to send
-  await outbound.email.bulk({ /* ... */ });
+  await outbound.email.bulk(apiKey, { /* ... */ });
 }
 ```
 
@@ -163,8 +163,8 @@ if (quota.remaining < recipientCount) {
 Build a simple health check that runs on a schedule:
 
 ```ts
-async function checkEmailHealth() {
-  const dashboard = await outbound.dashboard.get();
+async function checkEmailHealth(apiKey: string) {
+  const dashboard = await outbound.dashboard.get(apiKey);
   const { last30Days, quota } = dashboard;
 
   // Calculate bounce rate
@@ -199,8 +199,8 @@ Combine dashboard data with template stats:
 
 ```ts
 const [dashboard, templateStats] = await Promise.all([
-  outbound.dashboard.get(),
-  outbound.templates.stats(),
+  outbound.dashboard.get(apiKey),
+  outbound.templates.stats(apiKey),
 ]);
 
 console.log(`Templates: ${dashboard.templates.active} active / ${dashboard.templates.allocated} allocated`);

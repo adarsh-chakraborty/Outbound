@@ -5,7 +5,7 @@ Create reusable email templates with `{{variable}}` placeholders. Templates are 
 ## Create Template
 
 ```ts
-const { template } = await outbound.templates.create({
+const { template } = await outbound.templates.create(apiKey, {
   name: 'welcome-email',
   subject: 'Welcome {{firstName}}!',
   htmlBody: `
@@ -63,14 +63,14 @@ console.log(template.ses_template_name); // 'outbound-{uuid}' (auto-synced to SE
 | ----- | ------ | ----- |
 | `BadRequestError` | 400 | Missing `name`, `subject`, or `htmlBody` |
 | `ConflictError` | 409 | Template with this name already exists for your tenant |
-| `ForbiddenError` | 403 | Template quota exceeded (check `outbound.templates.stats()`) |
+| `ForbiddenError` | 403 | Template quota exceeded (check `outbound.templates.stats(apiKey)`) |
 
 ---
 
 ## List Templates
 
 ```ts
-const result = await outbound.templates.list({
+const result = await outbound.templates.list(apiKey, {
   status: 'active',
   search: 'welcome',
   sortBy: 'use_count',
@@ -115,7 +115,7 @@ console.log(result.quota.remaining); // 955 templates remaining
 Iterate through **all** templates without managing pages manually:
 
 ```ts
-for await (const template of outbound.templates.listAll({ status: 'active' })) {
+for await (const template of outbound.templates.listAll(apiKey, { status: 'active' })) {
   console.log(`${template.name} — used ${template.use_count} times`);
 }
 ```
@@ -125,7 +125,7 @@ for await (const template of outbound.templates.listAll({ status: 'active' })) {
 ## Get Single Template
 
 ```ts
-const { template } = await outbound.templates.get('template-uuid');
+const { template } = await outbound.templates.get(apiKey, 'template-uuid');
 ```
 
 ### Possible Errors
@@ -141,7 +141,7 @@ const { template } = await outbound.templates.get('template-uuid');
 Only pass the fields you want to change:
 
 ```ts
-const { template } = await outbound.templates.update('template-uuid', {
+const { template } = await outbound.templates.update(apiKey, 'template-uuid', {
   subject: 'Updated: Welcome {{firstName}}!',
   htmlBody: '<h1>New design</h1><p>Hello {{firstName}}</p>',
   variables: ['firstName'],
@@ -163,7 +163,7 @@ const { template } = await outbound.templates.update('template-uuid', {
 ### Archive a Template
 
 ```ts
-await outbound.templates.update('template-uuid', { status: 'archived' });
+await outbound.templates.update(apiKey, 'template-uuid', { status: 'archived' });
 ```
 
 Archived templates cannot be used for sending. Reactivate with `{ status: 'active' }`.
@@ -177,7 +177,7 @@ When you update `subject`, `htmlBody`, or `textBody`, the template is automatica
 ## Delete Template
 
 ```ts
-const result = await outbound.templates.delete('template-uuid');
+const result = await outbound.templates.delete(apiKey, 'template-uuid');
 // { message: 'Template deleted', id: 'template-uuid' }
 ```
 
@@ -197,10 +197,10 @@ Create a copy of an existing template:
 
 ```ts
 // With auto-generated name ("Copy of welcome-email")
-const { template } = await outbound.templates.duplicate('template-uuid');
+const { template } = await outbound.templates.duplicate(apiKey, 'template-uuid');
 
 // With custom name
-const { template } = await outbound.templates.duplicate('template-uuid', {
+const { template } = await outbound.templates.duplicate(apiKey, 'template-uuid', {
   name: 'welcome-email-v2',
 });
 ```
@@ -222,7 +222,7 @@ The duplicate is a completely independent template with its own ID, `use_count: 
 Render a template with sample variables **without sending** — useful for testing in your UI:
 
 ```ts
-const preview = await outbound.templates.preview('template-uuid', {
+const preview = await outbound.templates.preview(apiKey, 'template-uuid', {
   variables: { firstName: 'John', company: 'Acme' },
 });
 
@@ -259,7 +259,7 @@ Use `missingVariables` to validate that your code is passing all required variab
 ### Single Recipient
 
 ```ts
-const { jobId, messageId } = await outbound.templates.send({
+const { jobId, messageId } = await outbound.templates.send(apiKey, {
   templateId: 'template-uuid',
   toEmail: 'user@example.com',
   fromEmail: 'noreply@yourcompany.com',
@@ -321,7 +321,7 @@ const { jobId, messageId } = await outbound.templates.send({
 Send the same template to up to **500 recipients** with per-recipient variables. This uses AWS SES `SendBulkEmailCommand` for maximum throughput.
 
 ```ts
-const result = await outbound.templates.bulkSend({
+const result = await outbound.templates.bulkSend(apiKey, {
   templateId: 'template-uuid',
   fromEmail: 'noreply@yourcompany.com',
   senderName: 'YourCompany',
@@ -401,7 +401,7 @@ When using `bulkSend`, the platform uses AWS SES's `SendBulkEmailCommand` which 
 Get an overview of your template usage:
 
 ```ts
-const stats = await outbound.templates.stats();
+const stats = await outbound.templates.stats(apiKey);
 ```
 
 ### Response
@@ -443,9 +443,10 @@ const stats = await outbound.templates.stats();
 import { Outbound, NotFoundError } from '@masters-union/outbound-sdk';
 
 const outbound = new Outbound();
+const apiKey = 'mu_outbound_...';
 
 // 1. Create
-const { template } = await outbound.templates.create({
+const { template } = await outbound.templates.create(apiKey, {
   name: 'order-confirmation',
   subject: 'Order #{{orderId}} Confirmed',
   htmlBody: `
@@ -458,7 +459,7 @@ const { template } = await outbound.templates.create({
 });
 
 // 2. Preview before sending
-const preview = await outbound.templates.preview(template.id, {
+const preview = await outbound.templates.preview(apiKey, template.id, {
   variables: {
     customerName: 'Jane',
     orderId: '1234',
@@ -470,7 +471,7 @@ console.log('Preview subject:', preview.subject);
 // "Order #1234 Confirmed"
 
 // 3. Send to one customer
-await outbound.templates.send({
+await outbound.templates.send(apiKey, {
   templateId: template.id,
   toEmail: 'jane@example.com',
   fromEmail: 'orders@yourcompany.com',
@@ -484,7 +485,7 @@ await outbound.templates.send({
 });
 
 // 4. Bulk send to many customers
-const bulkResult = await outbound.templates.bulkSend({
+const bulkResult = await outbound.templates.bulkSend(apiKey, {
   templateId: template.id,
   fromEmail: 'orders@yourcompany.com',
   senderName: 'YourCompany Orders',
@@ -502,9 +503,9 @@ const bulkResult = await outbound.templates.bulkSend({
 console.log(`Sent to ${bulkResult.recipientCount} customers`);
 
 // 5. Check stats
-const stats = await outbound.templates.stats();
+const stats = await outbound.templates.stats(apiKey);
 console.log(`Template quota: ${stats.quota.used}/${stats.quota.allocated}`);
 
 // 6. Archive when no longer needed
-await outbound.templates.update(template.id, { status: 'archived' });
+await outbound.templates.update(apiKey, template.id, { status: 'archived' });
 ```

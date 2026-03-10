@@ -10,19 +10,19 @@ import type {
 export class WebhooksResource {
   constructor(private http: HttpClient) {}
 
-  async create(params: CreateWebhookParams): Promise<CreateWebhookResponse> {
-    return this.http.post<CreateWebhookResponse>('/v1/tenants/webhooks', params);
+  async create(apiKey: string, params: CreateWebhookParams): Promise<CreateWebhookResponse> {
+    return this.http.post<CreateWebhookResponse>(apiKey, '/v1/tenants/webhooks', params);
   }
 
-  async list(): Promise<ListWebhooksResponse> {
-    return this.http.get<ListWebhooksResponse>('/v1/tenants/webhooks');
+  async list(apiKey: string): Promise<ListWebhooksResponse> {
+    return this.http.get<ListWebhooksResponse>(apiKey, '/v1/tenants/webhooks');
   }
 
-  async update(id: string, params: UpdateWebhookParams): Promise<UpdateWebhookResponse> {
-    return this.http.patch<UpdateWebhookResponse>(`/v1/tenants/webhooks/${encodeURIComponent(id)}`, params);
+  async update(apiKey: string, id: string, params: UpdateWebhookParams): Promise<UpdateWebhookResponse> {
+    return this.http.patch<UpdateWebhookResponse>(apiKey, `/v1/tenants/webhooks/${encodeURIComponent(id)}`, params);
   }
 
-  async delete(id: string): Promise<{ message: string; id: string }> {
-    return this.http.delete<{ message: string; id: string }>(`/v1/tenants/webhooks/${encodeURIComponent(id)}`);
+  async delete(apiKey: string, id: string): Promise<{ message: string; id: string }> {
+    return this.http.delete<{ message: string; id: string }>(apiKey, `/v1/tenants/webhooks/${encodeURIComponent(id)}`);
   }
 }

@@ -37,12 +37,6 @@ Your Outbound admin will provide you with an API key. It looks like:
 mu_outbound_a1b2c3d4e5f6...
 ```
 
-Add it to your `.env` file:
-
-```bash
-OUTBOUND_API_KEY=mu_outbound_your_api_key_here
-```
-
 ### 2. Initialize the client
 
 ::: code-group
@@ -58,20 +52,14 @@ const outbound = new Outbound();
 ```
 :::
 
-The client automatically reads `OUTBOUND_API_KEY` from your environment. No base URL configuration needed — the SDK connects to the Outbound API automatically.
-
-::: danger Missing API Key
-If the API key is not set, the SDK throws immediately on initialization:
-```
-AuthenticationError: API key is required.
-Pass it to the constructor or set the OUTBOUND_API_KEY environment variable.
-```
-:::
+The client is stateless — no API key is stored in the client. Instead, every method call takes the `apiKey` as its first argument. This supports multi-tenant usage where a single client instance can serve multiple tenants.
 
 ### 3. Send your first email
 
 ```ts
-const { jobId, messageId } = await outbound.email.send({
+const apiKey = 'mu_outbound_your_api_key_here';
+
+const { jobId, messageId } = await outbound.email.send(apiKey, {
   toEmail: 'user@example.com',
   fromEmail: 'noreply@yourcompany.com', // must be a verified domain
   emailSubject: 'Welcome!',
@@ -88,7 +76,7 @@ The `fromEmail` must use a domain that has been verified and assigned to your te
 ### 4. Check delivery status
 
 ```ts
-const status = await outbound.email.status(jobId);
+const status = await outbound.email.status(apiKey, jobId);
 
 for (const recipient of status.recipients) {
   console.log(`${recipient.recipient_email}: ${recipient.status}`);
@@ -100,7 +88,7 @@ for (const recipient of status.recipients) {
 
 ```ts
 // Create a reusable template
-const { template } = await outbound.templates.create({
+const { template } = await outbound.templates.create(apiKey, {
   name: 'welcome-email',
   subject: 'Welcome {{firstName}}!',
   htmlBody: '<h1>Hello {{firstName}}</h1><p>Welcome to {{company}}.</p>',
@@ -108,7 +96,7 @@ const { template } = await outbound.templates.create({
 });
 
 // Send to one person
-await outbound.templates.send({
+await outbound.templates.send(apiKey, {
   templateId: template.id,
   toEmail: 'user@example.com',
   fromEmail: 'noreply@yourcompany.com',
@@ -116,7 +104,7 @@ await outbound.templates.send({
 });
 
 // Send to many people
-await outbound.templates.bulkSend({
+await outbound.templates.bulkSend(apiKey, {
   templateId: template.id,
   fromEmail: 'noreply@yourcompany.com',
   recipients: [
@@ -124,6 +112,17 @@ await outbound.templates.bulkSend({
     { toEmail: 'bob@example.com', variables: { firstName: 'Bob', company: 'Acme' } },
   ],
 });
+```
+
+### 6. Multi-tenant usage
+
+```ts
+const tenantAKey = 'mu_outbound_tenant_a_...';
+const tenantBKey = 'mu_outbound_tenant_b_...';
+
+// Same client instance, different API keys per call
+await outbound.email.send(tenantAKey, { /* ... */ });
+await outbound.email.send(tenantBKey, { /* ... */ });
 ```
 
 ## Key Concepts
@@ -163,7 +162,7 @@ Your tenant account has:
 - **Rate limit** — Max emails per second
 - **Template limit** — Max number of templates
 
-Check your quota anytime with `outbound.dashboard.quota()`.
+Check your quota anytime with `outbound.dashboard.quota(apiKey)`.
 
 ## What's Next?
 

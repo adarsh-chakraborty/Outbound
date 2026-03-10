@@ -4,11 +4,11 @@ import type { DashboardResponse, QuotaResponse } from '../types';
 export class DashboardResource {
   constructor(private http: HttpClient) {}
 
-  async get(): Promise<DashboardResponse> {
-    return this.http.get<DashboardResponse>('/v1/tenants/dashboard');
+  async get(apiKey: string): Promise<DashboardResponse> {
+    return this.http.get<DashboardResponse>(apiKey, '/v1/tenants/dashboard');
   }
 
-  async quota(): Promise<QuotaResponse> {
-    return this.http.get<QuotaResponse>('/v1/tenants/quota');
+  async quota(apiKey: string): Promise<QuotaResponse> {
+    return this.http.get<QuotaResponse>(apiKey, '/v1/tenants/quota');
   }
 }
