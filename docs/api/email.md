@@ -2,12 +2,14 @@
 
 Send single and bulk emails, and track delivery status by job ID.
 
+All examples assume you've set the API key in the constructor. For multi-tenant usage, pass `{ apiKey }` as the last argument to any method. See [Configuration](/guide/configuration).
+
 ## Send Single Email
 
 Send one email to one recipient.
 
 ```ts
-const result = await outbound.email.send(apiKey, {
+const result = await outbound.email.send({
   toEmail: 'user@example.com',
   fromEmail: 'noreply@yourcompany.com',
   emailSubject: 'Your order has shipped',
@@ -21,7 +23,7 @@ const result = await outbound.email.send(apiKey, {
 ### Full Parameters
 
 ```ts
-await outbound.email.send(apiKey, {
+await outbound.email.send({
   // Required
   toEmail: 'user@example.com',
   fromEmail: 'noreply@yourcompany.com',  // must be a verified domain
@@ -100,7 +102,7 @@ Use `idempotencyKey` to safely retry without sending duplicate emails:
 
 ```ts
 // First call — email is queued
-const result1 = await outbound.email.send(apiKey, {
+const result1 = await outbound.email.send({
   toEmail: 'user@example.com',
   fromEmail: 'noreply@company.com',
   emailSubject: 'Order Confirmation',
@@ -109,7 +111,7 @@ const result1 = await outbound.email.send(apiKey, {
 });
 
 // Second call with same key — returns existing job, no duplicate sent
-const result2 = await outbound.email.send(apiKey, {
+const result2 = await outbound.email.send({
   toEmail: 'user@example.com',
   fromEmail: 'noreply@company.com',
   emailSubject: 'Order Confirmation',
@@ -125,7 +127,7 @@ const result2 = await outbound.email.send(apiKey, {
 ```ts
 import { readFileSync } from 'fs';
 
-await outbound.email.send(apiKey, {
+await outbound.email.send({
   toEmail: 'user@example.com',
   fromEmail: 'noreply@company.com',
   emailSubject: 'Your Invoice',
@@ -158,7 +160,7 @@ await outbound.email.send(apiKey, {
 Send up to **500 emails** in a single API call. Each recipient can have a different HTML body and subject.
 
 ```ts
-const result = await outbound.email.bulk(apiKey, {
+const result = await outbound.email.bulk({
   fromEmail: 'noreply@yourcompany.com',
   emailSubject: 'Monthly Newsletter',
   senderName: 'YourCompany',
@@ -245,7 +247,7 @@ The platform automatically handles:
 Track the delivery status of every recipient in a job.
 
 ```ts
-const status = await outbound.email.status(apiKey, '550e8400-e29b-41d4-a716-446655440000');
+const status = await outbound.email.status('550e8400-e29b-41d4-a716-446655440000');
 ```
 
 ### Response
@@ -311,9 +313,9 @@ Statuses update asynchronously as AWS SES sends delivery notifications back to t
 ### Polling Example
 
 ```ts
-async function waitForDelivery(apiKey: string, jobId: string, maxAttempts = 10) {
+async function waitForDelivery(jobId: string, maxAttempts = 10) {
   for (let i = 0; i < maxAttempts; i++) {
-    const { recipients } = await outbound.email.status(apiKey, jobId);
+    const { recipients } = await outbound.email.status(jobId);
 
     const allDone = recipients.every(r =>
       ['delivered', 'bounced', 'complained', 'failed'].includes(r.status)

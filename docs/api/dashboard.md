@@ -2,6 +2,8 @@
 
 Access your tenant analytics, email metrics, and quota usage programmatically. Use this to build internal dashboards, monitor sending health, or check quota before large sends.
 
+All examples assume you've set the API key in the constructor. For multi-tenant usage, pass `{ apiKey }` as the last argument to any method. See [Configuration](/guide/configuration).
+
 ---
 
 ## Get Dashboard
@@ -9,7 +11,7 @@ Access your tenant analytics, email metrics, and quota usage programmatically. U
 Get a complete overview of your tenant's email activity and resource usage.
 
 ```ts
-const dashboard = await outbound.dashboard.get(apiKey);
+const dashboard = await outbound.dashboard.get();
 
 console.log(`Quota: ${dashboard.quota.used}/${dashboard.quota.allocated}`);
 console.log(`Delivered (30d): ${dashboard.last30Days.delivered}`);
@@ -88,7 +90,7 @@ console.log(`Templates: ${dashboard.templates.active} active`);
 Get detailed quota usage — useful for checking available capacity before a large send.
 
 ```ts
-const quota = await outbound.dashboard.quota(apiKey);
+const quota = await outbound.dashboard.quota();
 
 console.log(`Daily: ${quota.dailyUsed}/${quota.dailyLimit}`);
 console.log(`Monthly: ${quota.monthlyUsed}/${quota.monthlyLimit}`);
@@ -140,21 +142,20 @@ console.log(`Overall: ${quota.percentageUsed}% used`);
 Before sending a large batch, verify you have enough quota:
 
 ```ts
-const quota = await outbound.dashboard.quota(apiKey);
+const quota = await outbound.dashboard.quota();
 const recipientCount = 500;
 
 if (quota.remaining < recipientCount) {
   console.error(
     `Insufficient quota: need ${recipientCount}, only ${quota.remaining} remaining`
   );
-  // Handle gracefully — queue for later, alert admin, etc.
 } else if (quota.dailyLimit - quota.dailyUsed < recipientCount) {
   console.warn(
     `Daily limit would be exceeded: ${quota.dailyLimit - quota.dailyUsed} remaining today`
   );
 } else {
   // Safe to send
-  await outbound.email.bulk(apiKey, { /* ... */ });
+  await outbound.email.bulk({ /* ... */ });
 }
 ```
 
@@ -163,8 +164,8 @@ if (quota.remaining < recipientCount) {
 Build a simple health check that runs on a schedule:
 
 ```ts
-async function checkEmailHealth(apiKey: string) {
-  const dashboard = await outbound.dashboard.get(apiKey);
+async function checkEmailHealth() {
+  const dashboard = await outbound.dashboard.get();
   const { last30Days, quota } = dashboard;
 
   // Calculate bounce rate
@@ -199,8 +200,8 @@ Combine dashboard data with template stats:
 
 ```ts
 const [dashboard, templateStats] = await Promise.all([
-  outbound.dashboard.get(apiKey),
-  outbound.templates.stats(apiKey),
+  outbound.dashboard.get(),
+  outbound.templates.stats(),
 ]);
 
 console.log(`Templates: ${dashboard.templates.active} active / ${dashboard.templates.allocated} allocated`);

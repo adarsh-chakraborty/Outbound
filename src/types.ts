@@ -1,6 +1,7 @@
 // ===== Client Config =====
 
 export interface OutboundConfig {
+  apiKey?: string;
   baseUrl?: string;
   timeout?: number;
   maxRetries?: number;
@@ -8,10 +9,15 @@ export interface OutboundConfig {
 }
 
 export interface ResolvedConfig {
+  apiKey?: string;
   baseUrl: string;
   timeout: number;
   maxRetries: number;
   retryDelay: number;
+}
+
+export interface RequestOverrides {
+  apiKey?: string;
 }
 
 // ===== Email =====

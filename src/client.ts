@@ -17,6 +17,7 @@ export class Outbound {
 
   constructor(config?: OutboundConfig) {
     const resolved: ResolvedConfig = {
+      apiKey: config?.apiKey,
       baseUrl: config?.baseUrl || BASE_URL,
       timeout: config?.timeout ?? 30_000,
       maxRetries: config?.maxRetries ?? 3,

@@ -13,7 +13,7 @@ All errors thrown by the SDK extend `OutboundError`. Each error has:
 import { Outbound, OutboundError, RateLimitError } from '@masters-union/outbound-sdk';
 
 try {
-  await outbound.email.send(apiKey, { ... });
+  await outbound.email.send({ ... });
 } catch (err) {
   if (err instanceof OutboundError) {
     console.error(`Error ${err.statusCode}: ${err.message}`);
@@ -47,7 +47,7 @@ import {
 } from '@masters-union/outbound-sdk';
 
 try {
-  await outbound.email.send(apiKey, params);
+  await outbound.email.send(params);
 } catch (err) {
   if (err instanceof BadRequestError) {
     // Fix your request parameters
@@ -71,7 +71,7 @@ try {
 
 ```ts
 try {
-  await outbound.email.bulk(apiKey, { ... });
+  await outbound.email.bulk({ ... });
 } catch (err) {
   if (err instanceof RateLimitError) {
     console.log(`Retry after ${err.retryAfter} seconds`);

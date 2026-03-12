@@ -18,6 +18,7 @@ export {
 export type {
   OutboundConfig,
   ResolvedConfig,
+  RequestOverrides,
   SendEmailParams,
   Attachment,
   SendEmailResponse,

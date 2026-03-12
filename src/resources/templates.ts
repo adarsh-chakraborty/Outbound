@@ -13,25 +13,26 @@ import type {
   TemplatePreviewParams,
   TemplatePreviewResponse,
   TemplateStatsResponse,
+  RequestOverrides,
 } from '../types';
 
 export class TemplatesResource {
   constructor(private http: HttpClient) {}
 
-  async create(apiKey: string, params: CreateTemplateParams): Promise<TemplateResponse> {
-    return this.http.post<TemplateResponse>(apiKey, '/v1/email-templates', params);
+  async create(params: CreateTemplateParams, overrides?: RequestOverrides): Promise<TemplateResponse> {
+    return this.http.post<TemplateResponse>('/v1/email-templates', params, overrides?.apiKey);
   }
 
-  async list(apiKey: string, params?: ListTemplatesParams): Promise<ListTemplatesResponse> {
-    return this.http.get<ListTemplatesResponse>(apiKey, '/v1/email-templates', params as Record<string, unknown>);
+  async list(params?: ListTemplatesParams, overrides?: RequestOverrides): Promise<ListTemplatesResponse> {
+    return this.http.get<ListTemplatesResponse>('/v1/email-templates', params as Record<string, unknown>, overrides?.apiKey);
   }
 
-  async *listAll(apiKey: string, params?: Omit<ListTemplatesParams, 'page'>): AsyncGenerator<Template> {
+  async *listAll(params?: Omit<ListTemplatesParams, 'page'>, overrides?: RequestOverrides): AsyncGenerator<Template> {
     let page = 1;
     const limit = params?.limit || 20;
 
     while (true) {
-      const result = await this.list(apiKey, { ...params, page, limit });
+      const result = await this.list({ ...params, page, limit }, overrides);
       for (const template of result.templates) {
         yield template;
       }
@@ -40,35 +41,35 @@ export class TemplatesResource {
     }
   }
 
-  async get(apiKey: string, id: string): Promise<TemplateResponse> {
-    return this.http.get<TemplateResponse>(apiKey, `/v1/email-templates/${encodeURIComponent(id)}`);
+  async get(id: string, overrides?: RequestOverrides): Promise<TemplateResponse> {
+    return this.http.get<TemplateResponse>(`/v1/email-templates/${encodeURIComponent(id)}`, undefined, overrides?.apiKey);
   }
 
-  async update(apiKey: string, id: string, params: UpdateTemplateParams): Promise<TemplateResponse> {
-    return this.http.patch<TemplateResponse>(apiKey, `/v1/email-templates/${encodeURIComponent(id)}`, params);
+  async update(id: string, params: UpdateTemplateParams, overrides?: RequestOverrides): Promise<TemplateResponse> {
+    return this.http.patch<TemplateResponse>(`/v1/email-templates/${encodeURIComponent(id)}`, params, overrides?.apiKey);
   }
 
-  async delete(apiKey: string, id: string): Promise<{ message: string; id: string }> {
-    return this.http.delete<{ message: string; id: string }>(apiKey, `/v1/email-templates/${encodeURIComponent(id)}`);
+  async delete(id: string, overrides?: RequestOverrides): Promise<{ message: string; id: string }> {
+    return this.http.delete<{ message: string; id: string }>(`/v1/email-templates/${encodeURIComponent(id)}`, overrides?.apiKey);
   }
 
-  async duplicate(apiKey: string, id: string, params?: { name?: string }): Promise<TemplateResponse> {
-    return this.http.post<TemplateResponse>(apiKey, `/v1/email-templates/${encodeURIComponent(id)}/duplicate`, params);
+  async duplicate(id: string, params?: { name?: string }, overrides?: RequestOverrides): Promise<TemplateResponse> {
+    return this.http.post<TemplateResponse>(`/v1/email-templates/${encodeURIComponent(id)}/duplicate`, params, overrides?.apiKey);
   }
 
-  async preview(apiKey: string, id: string, params?: TemplatePreviewParams): Promise<TemplatePreviewResponse> {
-    return this.http.post<TemplatePreviewResponse>(apiKey, `/v1/email-templates/${encodeURIComponent(id)}/preview`, params);
+  async preview(id: string, params?: TemplatePreviewParams, overrides?: RequestOverrides): Promise<TemplatePreviewResponse> {
+    return this.http.post<TemplatePreviewResponse>(`/v1/email-templates/${encodeURIComponent(id)}/preview`, params, overrides?.apiKey);
   }
 
-  async send(apiKey: string, params: TemplateSendParams): Promise<SendEmailResponse> {
-    return this.http.post<SendEmailResponse>(apiKey, '/v1/email-templates/send', params);
+  async send(params: TemplateSendParams, overrides?: RequestOverrides): Promise<SendEmailResponse> {
+    return this.http.post<SendEmailResponse>('/v1/email-templates/send', params, overrides?.apiKey);
   }
 
-  async bulkSend(apiKey: string, params: TemplateBulkSendParams): Promise<TemplateBulkSendResponse> {
-    return this.http.post<TemplateBulkSendResponse>(apiKey, '/v1/email-templates/bulk', params);
+  async bulkSend(params: TemplateBulkSendParams, overrides?: RequestOverrides): Promise<TemplateBulkSendResponse> {
+    return this.http.post<TemplateBulkSendResponse>('/v1/email-templates/bulk', params, overrides?.apiKey);
   }
 
-  async stats(apiKey: string): Promise<TemplateStatsResponse> {
-    return this.http.get<TemplateStatsResponse>(apiKey, '/v1/email-templates/stats');
+  async stats(overrides?: RequestOverrides): Promise<TemplateStatsResponse> {
+    return this.http.get<TemplateStatsResponse>('/v1/email-templates/stats', undefined, overrides?.apiKey);
   }
 }

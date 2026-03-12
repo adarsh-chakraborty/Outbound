@@ -2,10 +2,12 @@
 
 Receive real-time notifications when email events occur — deliveries, bounces, opens, clicks, and more. Subscribe your endpoint, and the platform pushes events to you as they happen.
 
+All examples assume you've set the API key in the constructor. For multi-tenant usage, pass `{ apiKey }` as the last argument to any method. See [Configuration](/guide/configuration).
+
 ## Create Webhook
 
 ```ts
-const { webhook, secret } = await outbound.webhooks.create(apiKey, {
+const { webhook, secret } = await outbound.webhooks.create({
   url: 'https://myapp.com/webhooks/outbound',
   events: ['delivery', 'bounce', 'complaint', 'open', 'click'],
   retryInterval: 300,
@@ -81,7 +83,7 @@ console.log(secret);      // '64-char hex string'
 Retrieve all webhooks registered for your tenant.
 
 ```ts
-const { webhooks } = await outbound.webhooks.list(apiKey);
+const { webhooks } = await outbound.webhooks.list();
 
 for (const wh of webhooks) {
   console.log(`${wh.url} — ${wh.status} — events: ${wh.events.join(', ')}`);
@@ -125,7 +127,7 @@ A `defective` webhook can be re-enabled by updating it with `active: true`. This
 Only pass the fields you want to change:
 
 ```ts
-const { webhook } = await outbound.webhooks.update(apiKey, 'webhook-uuid', {
+const { webhook } = await outbound.webhooks.update('webhook-uuid', {
   events: ['delivery', 'bounce'],
   active: true,
 });
@@ -165,7 +167,7 @@ All fields are optional:
 
 ```ts
 // If a webhook was auto-disabled due to failures, reactivate it:
-await outbound.webhooks.update(apiKey, 'webhook-uuid', { active: true });
+await outbound.webhooks.update('webhook-uuid', { active: true });
 // status resets from 'defective' → 'active'
 ```
 
@@ -183,7 +185,7 @@ await outbound.webhooks.update(apiKey, 'webhook-uuid', { active: true });
 Permanently remove a webhook. **This action is irreversible.**
 
 ```ts
-const result = await outbound.webhooks.delete(apiKey, 'webhook-uuid');
+const result = await outbound.webhooks.delete('webhook-uuid');
 // { message: 'Webhook deleted', id: 'webhook-uuid' }
 ```
 
@@ -320,7 +322,7 @@ If all retries fail, the webhook status is set to `defective` and no further eve
 - **Return 200 quickly** — process events asynchronously after responding
 - **Handle duplicates** — the same event may be delivered more than once during retries
 - **Use the `messageId`** as an idempotency key to deduplicate events
-- **Monitor webhook status** — check `outbound.webhooks.list(apiKey)` periodically for `defective` webhooks
+- **Monitor webhook status** — check `outbound.webhooks.list()` periodically for `defective` webhooks
 :::
 
 ---
@@ -331,13 +333,12 @@ If all retries fail, the webhook status is set to `defective` and no further eve
 import { Outbound } from '@masters-union/outbound-sdk';
 import express from 'express';
 
-const outbound = new Outbound();
-const apiKey = 'mu_outbound_...';
+const outbound = new Outbound({ apiKey: 'mu_outbound_...' });
 const app = express();
 app.use(express.json());
 
 // 1. Create a webhook
-const { webhook, secret } = await outbound.webhooks.create(apiKey, {
+const { webhook, secret } = await outbound.webhooks.create({
   url: 'https://myapp.com/webhooks/outbound',
   events: ['delivery', 'bounce', 'complaint', 'open', 'click'],
 });
@@ -361,11 +362,9 @@ app.post('/webhooks/outbound', (req, res) => {
       break;
     case 'bounce':
       console.log(`Bounced: ${event.email} (${event.bounceType})`);
-      // Handle bounced email in your system
       break;
     case 'complaint':
       console.log(`Complaint from ${event.email}`);
-      // Unsubscribe user in your system
       break;
     case 'open':
       console.log(`Opened by ${event.email}`);
@@ -379,14 +378,14 @@ app.post('/webhooks/outbound', (req, res) => {
 });
 
 // 3. List your webhooks
-const { webhooks } = await outbound.webhooks.list(apiKey);
+const { webhooks } = await outbound.webhooks.list();
 console.log(`You have ${webhooks.length} webhook(s)`);
 
 // 4. Update events
-await outbound.webhooks.update(apiKey, webhook.id, {
+await outbound.webhooks.update(webhook.id, {
   events: ['delivery', 'bounce', 'complaint'],
 });
 
 // 5. Delete when no longer needed
-await outbound.webhooks.delete(apiKey, webhook.id);
+await outbound.webhooks.delete(webhook.id);
 ```

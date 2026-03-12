@@ -4,12 +4,14 @@ Manage your email suppression list. Suppressed email addresses are automatically
 
 The platform automatically adds addresses to the suppression list when emails bounce or receive complaints. You can also manually suppress or unsuppress addresses via the SDK.
 
+All examples assume you've set the API key in the constructor. For multi-tenant usage, pass `{ apiKey }` as the last argument to any method. See [Configuration](/guide/configuration).
+
 ---
 
 ## List Suppressions
 
 ```ts
-const result = await outbound.suppressions.list(apiKey, {
+const result = await outbound.suppressions.list({
   reason: 'bounce',
   page: 1,
   limit: 50,
@@ -70,7 +72,7 @@ for (const s of result.suppressions) {
 Iterate through **all** suppressed emails without managing pages manually:
 
 ```ts
-for await (const suppression of outbound.suppressions.listAll(apiKey, { reason: 'bounce' })) {
+for await (const suppression of outbound.suppressions.listAll({ reason: 'bounce' })) {
   console.log(`${suppression.email} — bounced on ${suppression.created_at}`);
 }
 ```
@@ -78,7 +80,7 @@ for await (const suppression of outbound.suppressions.listAll(apiKey, { reason: 
 You can also pass a `limit` to control batch size (default: 50, max: 100):
 
 ```ts
-for await (const suppression of outbound.suppressions.listAll(apiKey, { limit: 100 })) {
+for await (const suppression of outbound.suppressions.listAll({ limit: 100 })) {
   // fetches 100 per page internally
 }
 ```
@@ -90,7 +92,7 @@ for await (const suppression of outbound.suppressions.listAll(apiKey, { limit: 1
 Manually add an email address to your suppression list. Future sends to this address will be silently filtered out.
 
 ```ts
-const { suppression } = await outbound.suppressions.add(apiKey, {
+const { suppression } = await outbound.suppressions.add({
   email: 'bad-address@example.com',
   reason: 'manual',
 });
@@ -139,7 +141,7 @@ If the email is already on your suppression list, the **existing record is retur
 Remove an email address from your suppression list, allowing future sends to this address.
 
 ```ts
-const result = await outbound.suppressions.remove(apiKey, 'bad-address@example.com');
+const result = await outbound.suppressions.remove('bad-address@example.com');
 // { message: 'Suppression removed' }
 ```
 
@@ -173,8 +175,8 @@ Removing a bounced or complained email from your suppression list means future s
 
 When you send an email (single, bulk, or template-based), the platform checks each recipient against your suppression list **before** sending:
 
-- **Single send** (`outbound.email.send(apiKey, ...)`) — if the recipient is suppressed, the email is silently skipped
-- **Bulk send** (`outbound.email.bulk(apiKey, ...)`) — suppressed recipients are removed from the batch and reported in the response:
+- **Single send** (`outbound.email.send(...)`) — if the recipient is suppressed, the email is silently skipped
+- **Bulk send** (`outbound.email.bulk(...)`) — suppressed recipients are removed from the batch and reported in the response:
   ```ts
   {
     recipientCount: 485,     // emails that will be sent
@@ -182,7 +184,7 @@ When you send an email (single, bulk, or template-based), the platform checks ea
     suppressedEmails: ['bounced@example.com', 'complained@example.com']
   }
   ```
-- **Template bulk send** (`outbound.templates.bulkSend(apiKey, ...)`) — same behavior as bulk send
+- **Template bulk send** (`outbound.templates.bulkSend(...)`) — same behavior as bulk send
 
 Suppressed emails **do not count** against your sending quota.
 
@@ -193,27 +195,26 @@ Suppressed emails **do not count** against your sending quota.
 ```ts
 import { Outbound, NotFoundError } from '@masters-union/outbound-sdk';
 
-const outbound = new Outbound();
-const apiKey = 'mu_outbound_...';
+const outbound = new Outbound({ apiKey: 'mu_outbound_...' });
 
 // 1. Check current suppressions
-const result = await outbound.suppressions.list(apiKey);
+const result = await outbound.suppressions.list();
 console.log(`${result.pagination.total} emails suppressed`);
 
 // 2. Review bounces
-for await (const s of outbound.suppressions.listAll(apiKey, { reason: 'bounce' })) {
+for await (const s of outbound.suppressions.listAll({ reason: 'bounce' })) {
   console.log(`Bounced: ${s.email} on ${s.created_at}`);
 }
 
 // 3. Manually suppress an email
-await outbound.suppressions.add(apiKey, {
+await outbound.suppressions.add({
   email: 'do-not-email@example.com',
   reason: 'manual',
 });
 
 // 4. Remove a suppression (e.g., user re-verified their email)
 try {
-  await outbound.suppressions.remove(apiKey, 'do-not-email@example.com');
+  await outbound.suppressions.remove('do-not-email@example.com');
   console.log('Suppression removed — email can receive messages again');
 } catch (error) {
   if (error instanceof NotFoundError) {
@@ -222,7 +223,7 @@ try {
 }
 
 // 5. Bulk send — suppressed emails are auto-filtered
-const bulkResult = await outbound.email.bulk(apiKey, {
+const bulkResult = await outbound.email.bulk({
   fromEmail: 'noreply@yourcompany.com',
   emailSubject: 'Monthly Update',
   emails: allRecipients.map(r => ({

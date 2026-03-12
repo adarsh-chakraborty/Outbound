@@ -5,21 +5,22 @@ import type {
   AddSuppressionParams,
   SuppressionResponse,
   Suppression,
+  RequestOverrides,
 } from '../types';
 
 export class SuppressionsResource {
   constructor(private http: HttpClient) {}
 
-  async list(apiKey: string, params?: ListSuppressionsParams): Promise<ListSuppressionsResponse> {
-    return this.http.get<ListSuppressionsResponse>(apiKey, '/v1/tenants/suppressions', params as Record<string, unknown>);
+  async list(params?: ListSuppressionsParams, overrides?: RequestOverrides): Promise<ListSuppressionsResponse> {
+    return this.http.get<ListSuppressionsResponse>('/v1/tenants/suppressions', params as Record<string, unknown>, overrides?.apiKey);
   }
 
-  async *listAll(apiKey: string, params?: Omit<ListSuppressionsParams, 'page'>): AsyncGenerator<Suppression> {
+  async *listAll(params?: Omit<ListSuppressionsParams, 'page'>, overrides?: RequestOverrides): AsyncGenerator<Suppression> {
     let page = 1;
     const limit = params?.limit || 50;
 
     while (true) {
-      const result = await this.list(apiKey, { ...params, page, limit });
+      const result = await this.list({ ...params, page, limit }, overrides);
       for (const suppression of result.suppressions) {
         yield suppression;
       }
@@ -28,11 +29,11 @@ export class SuppressionsResource {
     }
   }
 
-  async add(apiKey: string, params: AddSuppressionParams): Promise<SuppressionResponse> {
-    return this.http.post<SuppressionResponse>(apiKey, '/v1/tenants/suppressions', params);
+  async add(params: AddSuppressionParams, overrides?: RequestOverrides): Promise<SuppressionResponse> {
+    return this.http.post<SuppressionResponse>('/v1/tenants/suppressions', params, overrides?.apiKey);
   }
 
-  async remove(apiKey: string, email: string): Promise<{ message: string }> {
-    return this.http.delete<{ message: string }>(apiKey, `/v1/tenants/suppressions/${encodeURIComponent(email)}`);
+  async remove(email: string, overrides?: RequestOverrides): Promise<{ message: string }> {
+    return this.http.delete<{ message: string }>(`/v1/tenants/suppressions/${encodeURIComponent(email)}`, overrides?.apiKey);
   }
 }

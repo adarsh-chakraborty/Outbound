@@ -2,13 +2,11 @@
 
 ## Default Behavior
 
-The SDK client is stateless — no API key is stored. Create a client with optional config:
+Set your API key in the constructor and all methods use it automatically:
 
 ```ts
-const outbound = new Outbound(); // That's it!
+const outbound = new Outbound({ apiKey: 'mu_outbound_...' });
 ```
-
-Every method takes the API key as its first argument, allowing multi-tenant usage with a single client.
 
 ## Constructor Options
 
@@ -16,6 +14,7 @@ You can customize HTTP behavior by passing a config object:
 
 ```ts
 const outbound = new Outbound({
+  apiKey: 'mu_outbound_...',      // Default API key (optional if provided per call)
   baseUrl: 'http://localhost:3000', // For local development
   timeout: 30_000,    // Request timeout in ms (default: 30s)
   maxRetries: 3,      // Retry attempts on 429/5xx (default: 3)
@@ -27,6 +26,7 @@ const outbound = new Outbound({
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
+| `apiKey` | `string` | — | Default API key (optional if provided per call) |
 | `baseUrl` | `string` | Production URL | API base URL (override for local dev) |
 | `timeout` | `number` | `30000` | Request timeout in milliseconds |
 | `maxRetries` | `number` | `3` | Max retry attempts on 429 and 5xx errors |
@@ -34,25 +34,39 @@ const outbound = new Outbound({
 
 ## API Key
 
-The API key is passed as the first argument to every method call:
+The API key can be set in two places:
+
+1. **Constructor (default)** — used for all calls unless overridden
+2. **Per call** — passed as the last argument via `{ apiKey }`, takes priority
+
+### Single tenant — set once
 
 ```ts
-const apiKey = 'mu_outbound_...';
+const outbound = new Outbound({ apiKey: 'mu_outbound_...' });
 
-await outbound.email.send(apiKey, { /* ... */ });
-await outbound.templates.list(apiKey);
-await outbound.dashboard.quota(apiKey);
+await outbound.email.send({ /* ... */ });          // uses constructor key
+await outbound.dashboard.quota();                  // uses constructor key
 ```
 
-This design supports multi-tenant applications where different requests use different API keys:
+### Multi-tenant — override per call
 
 ```ts
-const tenantAKey = 'mu_outbound_tenant_a_...';
-const tenantBKey = 'mu_outbound_tenant_b_...';
+const outbound = new Outbound(); // no default key
 
-await outbound.email.send(tenantAKey, { /* ... */ });
-await outbound.email.send(tenantBKey, { /* ... */ });
+await outbound.email.send({ /* ... */ }, { apiKey: tenantAKey });
+await outbound.email.send({ /* ... */ }, { apiKey: tenantBKey });
 ```
+
+### Mixed — default with overrides
+
+```ts
+const outbound = new Outbound({ apiKey: tenantAKey });
+
+await outbound.email.send({ /* ... */ });                        // uses tenantAKey
+await outbound.email.send({ /* ... */ }, { apiKey: tenantBKey }); // uses tenantBKey
+```
+
+If no API key is available (neither in the constructor nor per call), an `AuthenticationError` is thrown.
 
 ### Getting your API key
 
@@ -87,6 +101,7 @@ When developing against a local Outbound API instance:
 
 ```ts
 const outbound = new Outbound({
+  apiKey: 'mu_outbound_...',
   baseUrl: 'http://localhost:3000',
 });
 ```

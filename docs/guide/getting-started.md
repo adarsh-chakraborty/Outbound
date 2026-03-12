@@ -43,23 +43,21 @@ mu_outbound_a1b2c3d4e5f6...
 ```ts [ESM]
 import { Outbound } from '@masters-union/outbound-sdk';
 
-const outbound = new Outbound();
+const outbound = new Outbound({ apiKey: 'mu_outbound_...' });
 ```
 ```js [CommonJS]
 const { Outbound } = require('@masters-union/outbound-sdk');
 
-const outbound = new Outbound();
+const outbound = new Outbound({ apiKey: 'mu_outbound_...' });
 ```
 :::
 
-The client is stateless — no API key is stored in the client. Instead, every method call takes the `apiKey` as its first argument. This supports multi-tenant usage where a single client instance can serve multiple tenants.
+Once you set the API key in the constructor, every method uses it automatically. No need to pass it on every call.
 
 ### 3. Send your first email
 
 ```ts
-const apiKey = 'mu_outbound_your_api_key_here';
-
-const { jobId, messageId } = await outbound.email.send(apiKey, {
+const { jobId, messageId } = await outbound.email.send({
   toEmail: 'user@example.com',
   fromEmail: 'noreply@yourcompany.com', // must be a verified domain
   emailSubject: 'Welcome!',
@@ -76,7 +74,7 @@ The `fromEmail` must use a domain that has been verified and assigned to your te
 ### 4. Check delivery status
 
 ```ts
-const status = await outbound.email.status(apiKey, jobId);
+const status = await outbound.email.status(jobId);
 
 for (const recipient of status.recipients) {
   console.log(`${recipient.recipient_email}: ${recipient.status}`);
@@ -88,7 +86,7 @@ for (const recipient of status.recipients) {
 
 ```ts
 // Create a reusable template
-const { template } = await outbound.templates.create(apiKey, {
+const { template } = await outbound.templates.create({
   name: 'welcome-email',
   subject: 'Welcome {{firstName}}!',
   htmlBody: '<h1>Hello {{firstName}}</h1><p>Welcome to {{company}}.</p>',
@@ -96,7 +94,7 @@ const { template } = await outbound.templates.create(apiKey, {
 });
 
 // Send to one person
-await outbound.templates.send(apiKey, {
+await outbound.templates.send({
   templateId: template.id,
   toEmail: 'user@example.com',
   fromEmail: 'noreply@yourcompany.com',
@@ -104,7 +102,7 @@ await outbound.templates.send(apiKey, {
 });
 
 // Send to many people
-await outbound.templates.bulkSend(apiKey, {
+await outbound.templates.bulkSend({
   templateId: template.id,
   fromEmail: 'noreply@yourcompany.com',
   recipients: [
@@ -116,13 +114,26 @@ await outbound.templates.bulkSend(apiKey, {
 
 ### 6. Multi-tenant usage
 
+The SDK supports multi-tenant applications. You can override the API key on any individual call using the optional last argument:
+
 ```ts
+const outbound = new Outbound(); // no default apiKey
+
 const tenantAKey = 'mu_outbound_tenant_a_...';
 const tenantBKey = 'mu_outbound_tenant_b_...';
 
-// Same client instance, different API keys per call
-await outbound.email.send(tenantAKey, { /* ... */ });
-await outbound.email.send(tenantBKey, { /* ... */ });
+// Pass { apiKey } as the last argument to override per call
+await outbound.email.send({ /* ... */ }, { apiKey: tenantAKey });
+await outbound.email.send({ /* ... */ }, { apiKey: tenantBKey });
+```
+
+You can also set a default in the constructor and override only when needed:
+
+```ts
+const outbound = new Outbound({ apiKey: tenantAKey }); // default
+
+await outbound.email.send({ /* ... */ });                        // uses tenantAKey
+await outbound.email.send({ /* ... */ }, { apiKey: tenantBKey }); // uses tenantBKey
 ```
 
 ## Key Concepts
@@ -162,7 +173,7 @@ Your tenant account has:
 - **Rate limit** — Max emails per second
 - **Template limit** — Max number of templates
 
-Check your quota anytime with `outbound.dashboard.quota(apiKey)`.
+Check your quota anytime with `outbound.dashboard.quota()`.
 
 ## What's Next?
 
